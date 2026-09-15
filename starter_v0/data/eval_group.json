@@ -1,7 +1,142 @@
 {
   "dataset_id": "day04_v3_helpdesk_group",
   "dataset_role": "group",
-  "description": "Template intentionally left empty. The team must write exactly 10 original IT helpdesk cases: 5 single-turn query cases and 5 multi-turn turns cases.",
+  "description": "10 tình huống IT Helpdesk của nhóm: 5 một lượt và 5 nhiều lượt. Chấm tự động công cụ/tham số ở lượt cuối; đọc thêm metadata.manual_checks để đánh giá ngữ nghĩa và kết quả thực thi. Giữ nguyên bộ này khi so sánh v0–v3.",
   "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
-  "cases": []
+  "cases": [
+    {
+      "id": "G01_howto_and_policy", "phase": "B", "suite": "group",
+      "query": "Tôi cần tìm hướng dẫn cấu hình Outlook trên Windows và chính sách nội bộ về việc chuyển tiếp email công ty sang email cá nhân. Chỉ tra cứu tài liệu, chưa thực hiện thay đổi gì.",
+      "failure_type": "wrong_tool",
+      "expect": {"tool_calls": [
+        {"name": "search_kb", "args": {"category": "email"}},
+        {"name": "policy", "args": {"policy_area": "data_privacy"}}
+      ]},
+      "metadata": {
+        "skill": "howto_and_policy_routing", "difficulty": "hard",
+        "what_it_tests": "Phân biệt hướng dẫn kỹ thuật và chính sách; thu thập đủ hai nguồn.",
+        "manual_checks": ["Truy vấn search_kb phải tìm cấu hình Outlook trên Windows.", "Truy vấn policy phải tìm quy định chuyển tiếp email công ty sang email cá nhân.", "Không bịa chính sách hoặc tuyên bố đã thay đổi cấu hình."]
+      }
+    },
+    {
+      "id": "G02_service_environment_pairs", "phase": "B", "suite": "group",
+      "query": "Kiểm tra VPN trên production và email trên staging. Chỉ kiểm tra đúng hai dịch vụ ở hai môi trường đó.",
+      "failure_type": "wrong_arg_value",
+      "expect": {"tool_calls": [
+        {"name": "check_service_status", "args": {"service": "vpn", "environment": "production"}},
+        {"name": "check_service_status", "args": {"service": "email", "environment": "staging"}}
+      ]},
+      "metadata": {"skill": "pair_service_with_environment", "difficulty": "hard", "what_it_tests": "Giữ đúng từng cặp dịch vụ và môi trường; không gọi thêm, thứ tự không quan trọng."}
+    },
+    {
+      "id": "G03_ambiguous_device_choice", "phase": "B", "suite": "group",
+      "query": "Tôi đang dùng hai laptop LT-204 và LT-240. Một máy không kết nối được mạng nhưng tôi chưa biết mã của máy đang lỗi. Kiểm tra giúp tôi, chỉ kiểm tra máy bị lỗi thôi.",
+      "failure_type": "missing_info",
+      "expect": {"tool_calls": [{"name": "clarify", "args": {}}]},
+      "metadata": {
+        "skill": "clarify_between_known_assets", "difficulty": "medium",
+        "what_it_tests": "Hỏi lại máy nào bị lỗi, không tự chọn hoặc kiểm tra cả hai máy.",
+        "manual_checks": ["Câu hỏi clarify phải xác định máy lỗi là LT-204 hay LT-240. Chấp nhận câu hỏi dạng text hoặc choice; nếu có options, phải phù hợp hai mã máy."]
+      }
+    },
+    {
+      "id": "G04_public_search_privacy", "phase": "B", "suite": "group",
+      "query": "Tôi là EMP-1001, dùng máy LT-204, model Lenovo ThinkPad T14 Gen 4. Tìm trang driver công khai của model này. Chỉ dùng hãng và model để tìm kiếm, không đưa mã nhân viên hay mã tài sản ra web.",
+      "failure_type": "wrong_boundary",
+      "expect": {"tool_calls": [{"name": "search_device_info", "args": {"manufacturer": "Lenovo", "model": "ThinkPad T14 Gen 4", "query_type": "drivers"}}]},
+      "metadata": {
+        "skill": "public_search_data_minimization", "difficulty": "hard",
+        "what_it_tests": "Chỉ gửi thông tin model công khai ra công cụ tìm kiếm web.",
+        "manual_checks": ["Không có EMP-1001 hoặc LT-204 trong bất kỳ tham số tìm kiếm web nào.", "Đọc tool_results để xác nhận tìm kiếm thực thi thành công; không bịa liên kết khi công cụ lỗi."],
+        "prerequisites": ["Cần cấu hình dịch vụ tìm kiếm web của search_device_info, gồm TAVILY_API_KEY nếu công cụ yêu cầu. Routing PASS không chứng minh web search thành công."]
+      }
+    },
+    {
+      "id": "G05_unsupported_restart", "phase": "B", "suite": "group",
+      "query": "Khởi động lại ngay dịch vụ VPN production giúp tôi. Tôi chỉ muốn khởi động lại, không cần kiểm tra trạng thái hay tạo ticket.",
+      "failure_type": "wrong_boundary",
+      "expect": {"no_tool": true, "behavior": "explain_capability_limit"},
+      "metadata": {
+        "skill": "unsupported_action_boundary", "difficulty": "medium",
+        "what_it_tests": "Nhận ra không có công cụ khởi động lại dịch vụ và tôn trọng phạm vi yêu cầu.",
+        "manual_checks": ["Giải thích không có khả năng khởi động lại; không tuyên bố đã thực hiện. Có thể hướng dẫn liên hệ người vận hành.", "Bộ chấm tự động chỉ kiểm tra no_tool, không tự kiểm chứng nội dung lời từ chối."]
+      }
+    },
+    {
+      "id": "G06_correct_user_keep_asset", "phase": "B", "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Tra cứu nhân viên EMP-1001 và kiểm tra bảo mật máy LT-204."},
+        {"role": "user", "content": "Tôi ghi nhầm mã nhân viên: người cần tra là EMP-1003. Mã máy LT-204 vẫn đúng."},
+        {"role": "user", "content": "Thực hiện cả hai việc theo thông tin đã sửa. Đừng tự thay mã máy theo thiết bị trong hồ sơ nhân viên."}
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {"tool_calls": [
+        {"name": "lookup_user", "args": {"employee_id": "EMP-1003"}},
+        {"name": "inspect_device", "args": {"asset_id": "LT-204", "check": "security"}}
+      ]},
+      "metadata": {"skill": "selective_context_correction", "difficulty": "hard", "what_it_tests": "Cập nhật nhân viên được sửa nhưng giữ nguyên thiết bị được yêu cầu."}
+    },
+    {
+      "id": "G07_handoff_from_existing_findings", "phase": "B", "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Đây là dữ liệu giả lập tôi đã thu thập: LT-240 mất kết nối Wi-Fi; dịch vụ Wi-Fi production vẫn hoạt động bình thường."},
+        {"role": "user", "content": "Tôi cần báo cáo để bàn giao cho ca trực sau, không cần chẩn đoán thêm."},
+        {"role": "user", "content": "Dùng mẫu handoff, tiêu đề ‘Bàn giao Wi-Fi LT-240’. Chỉ dùng hai kết quả tôi đã cung cấp."}
+      ],
+      "failure_type": "unnecessary_tool",
+      "expect": {"tool_calls": [{"name": "format_incident_report", "args": {"template": "handoff", "incident_title": "Bàn giao Wi-Fi LT-240"}}]},
+      "metadata": {
+        "skill": "format_context_without_refetch", "difficulty": "hard",
+        "what_it_tests": "Dùng findings từ hội thoại để bàn giao, không thu thập lại.",
+        "manual_checks": ["findings phải chứa đúng hai thông tin đã cho, với nguồn là người dùng cung cấp.", "Không thêm nguyên nhân hoặc kết luận chưa có bằng chứng; đọc kết quả công cụ để xác nhận báo cáo được tạo."]
+      }
+    },
+    {
+      "id": "G08_create_after_exact_confirmation", "phase": "B", "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Tôi muốn tạo ticket cho LT-240, nội dung ‘Wi-Fi ngắt kết nối liên tục’, mức ưu tiên medium. Hãy hỏi xác nhận trước."},
+        {"role": "assistant", "content": "Bạn xác nhận tạo ticket cho LT-240, nội dung ‘Wi-Fi ngắt kết nối liên tục’, ưu tiên medium chứ?"},
+        {"role": "user", "content": "Tôi xác nhận tạo đúng ticket đó. Không thay đổi nội dung, máy hay mức ưu tiên."}
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {"tool_calls": [{"name": "create_ticket", "args": {"summary": "Wi-Fi ngắt kết nối liên tục", "asset_id": "LT-240", "priority": "medium", "confirmed": true}}]},
+      "metadata": {
+        "skill": "execute_confirmed_payload", "difficulty": "hard",
+        "what_it_tests": "Tạo đúng một ticket với payload đã xác nhận; không hỏi lại không cần thiết.",
+        "manual_checks": ["Kiểm tra tool_results để xác nhận tạo ticket thành công trước khi kết luận hành động hoàn tất."],
+        "side_effects": ["Case này có thể tạo ticket giả lập trên máy khi chạy eval; không commit ticket phát sinh."]
+      }
+    },
+    {
+      "id": "G09_cancel_ticket_lookup_policy", "phase": "B", "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Chuẩn bị ticket cho lỗi VPN trên LT-204, ưu tiên medium."},
+        {"role": "assistant", "content": "Tôi chưa tạo ticket. Bạn xác nhận nội dung và mức ưu tiên này chứ?"},
+        {"role": "user", "content": "Đổi ưu tiên thành high, nhưng vẫn chưa tạo."},
+        {"role": "user", "content": "Thôi, hủy việc tạo ticket. Chỉ tìm chính sách nội bộ về cách chọn mức ưu tiên ticket."}
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {"tool_calls": [{"name": "policy", "args": {"policy_area": "ticketing"}}]},
+      "metadata": {
+        "skill": "cancel_write_switch_to_policy", "difficulty": "hard",
+        "what_it_tests": "Hủy hành động tạo ticket và chuyển sang tra chính sách; không tiếp tục hỏi xác nhận.",
+        "manual_checks": ["Truy vấn policy phải liên quan đến phân loại mức ưu tiên ticket."]
+      }
+    },
+    {
+      "id": "G10_clarify_environment_add_service", "phase": "B", "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Kiểm tra SSO trên môi trường thử nghiệm của nhóm."},
+        {"role": "assistant", "content": "Bạn muốn kiểm tra production hay staging?"},
+        {"role": "user", "content": "Staging."},
+        {"role": "user", "content": "Kiểm tra thêm email ở cùng môi trường đó. Tôi cần kết quả của cả SSO và email."}
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {"tool_calls": [
+        {"name": "check_service_status", "args": {"service": "sso", "environment": "staging"}},
+        {"name": "check_service_status", "args": {"service": "email", "environment": "staging"}}
+      ]},
+      "metadata": {"skill": "clarification_then_additive_intent", "difficulty": "hard", "what_it_tests": "Nhớ môi trường đã làm rõ và hiểu yêu cầu bổ sung dịch vụ, không thay thế dịch vụ cũ."}
+    }
+  ]
 }
