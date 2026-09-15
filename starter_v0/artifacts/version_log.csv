@@ -1,1 +1,2 @@
 version,author,changed_artifact,artifact_version,prompt_hash,tools_hash,reason,hypothesis,metric_name,metric_before,metric_after,run_file
+v1,GiangNT202602576,tools.yaml,v1+p27467914bc4d+t6f0967d5db69,27467914bc4d,6f0967d5db69,add ID constraints and clarify usage to tools,Nếu tool declaration mô tả rõ định dạng identifier và điều kiện hỏi lại thì model sẽ không dùng thiếu thông tin.,case_accuracy,0.7,0.6667,runs\v1_B_base_openai_20260915T203436781619.json
