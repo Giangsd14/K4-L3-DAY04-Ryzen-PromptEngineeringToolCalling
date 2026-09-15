@@ -8,12 +8,12 @@
 tools:
   # ---------------- Core tools ----------------
   - name: clarify
-    description: "Gửi một câu hỏi cho người dùng."
+    description: "Gửi một câu hỏi cho người dùng. Dùng khi thiếu hoặc mơ hồ asset ID, employee ID, environment."
     parameters:
       type: object
       properties:
         question: {type: string, default: "", description: "Câu hỏi"}
-        response_type: {type: string, enum: [text, yes_no, choice], default: "text", description: "Kiểu trả lời"}
+        response_type: {type: string, enum: [text, yes_no, choice], default: "text", description: "Kiểu trả lời. Dùng text khi cần ID. Dùng choice và cung cấp options chính xác khi giá trị không map chắc chắn vào enum."}
         options: {type: array, default: [], items: {type: string}, description: "Các lựa chọn"}
       required: [question]
 
@@ -28,7 +28,7 @@ tools:
       required: [query]
 
   - name: check_service_status
-    description: "Kiểm tra trạng thái một dịch vụ."
+    description: "Kiểm tra trạng thái một dịch vụ. Nếu môi trường không phải production hoặc staging, phải hỏi lại (clarify)."
     parameters:
       type: object
       properties:
@@ -37,7 +37,7 @@ tools:
       required: [service]
 
   - name: inspect_device
-    description: "Kiểm tra thông tin và chẩn đoán thiết bị."
+    description: "Kiểm tra thông tin và chẩn đoán thiết bị. Chỉ gọi khi có asset ID hợp lệ, không dùng tên loại máy như laptop. Employee ID không phải asset ID."
     parameters:
       type: object
       properties:
@@ -46,7 +46,7 @@ tools:
       required: [asset_id]
 
   - name: lookup_user
-    description: "Tra cứu người dùng trong danh bạ hỗ trợ."
+    description: "Tra cứu người dùng trong danh bạ hỗ trợ. Chỉ nhận employee ID, không dùng phòng ban hoặc tên mơ hồ làm ID. Tra tài khoản và thiết bị được cấp chỉ cần lookup_user; không tự gọi inspect_device."
     parameters:
       type: object
       properties:
