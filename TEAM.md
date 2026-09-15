@@ -4,7 +4,7 @@
 
 ## Thông tin bài nộp
 
-- Tên nhóm: Ryzan
+- Tên nhóm: Ryzen
 - Người đại diện / MSSV: Nguyễn Thanh Giang / 2A202602576
 - Tên repo: `K4-L3-DAY04-Ryzen-PromptEngineeringToolCalling`
 - URL repo, nhánh nộp, commit chốt:
