@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>VinUni IT Helpdesk</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">VI</span>
+          <div><p class="eyebrow">VINUNIVERSITY</p><h1>IT Helpdesk</h1></div>
+        </div>
+        <section class="status-card">
+          <p class="label">KẾT NỐI AGENT</p>
+          <p class="online"><span></span> Sẵn sàng</p>
+          <dl>
+            <div><dt>Provider</dt><dd id="provider">—</dd></div>
+            <div><dt>Model</dt><dd id="model">—</dd></div>
+            <div><dt>Artifact</dt><dd id="artifact">—</dd></div>
+          </dl>
+        </section>
+        <section class="selector-card">
+          <p class="label">CẤU HÌNH PHIÊN</p>
+          <label for="provider-select">Provider</label><select id="provider-select"></select>
+          <label for="model-select">Model</label><select id="model-select"></select>
+          <label for="version-select">Version</label><select id="version-select"></select>
+          <button id="apply-config" class="apply-button" type="button">Áp dụng cấu hình</button>
+        </section>
+        <button id="reset-button" class="reset-button" type="button">＋ Cuộc trò chuyện mới</button>
+        <section class="trace-note">
+          <p class="label">MINH CHỨNG THẬT</p>
+          <p>Tool trace hiển thị các tool call, input và kết quả từ agent loop hiện có.</p>
+        </section>
+        <p class="sidebar-footer">Day04 · Prompt Engineering &amp; Tool Calling</p>
+      </aside>
+
+      <section class="chat-panel">
+        <header class="chat-header">
+          <div><p class="eyebrow">TRỢ LÝ NỘI BỘ</p><h2>Hôm nay tôi có thể hỗ trợ gì?</h2></div>
+          <span id="session-badge" class="session-badge">Phiên mới</span>
+        </header>
+        <div id="messages" class="messages" aria-live="polite">
+          <article class="welcome-card">
+            <div class="welcome-icon">✦</div>
+            <div><h3>Chào bạn!</h3><p>Tôi có thể hỗ trợ kiểm tra dịch vụ, tra cứu thiết bị, tìm hướng dẫn nội bộ và tạo ticket sau khi bạn xác nhận.</p></div>
+          </article>
+        </div>
+        <form id="chat-form" class="composer">
+          <label class="sr-only" for="message-input">Tin nhắn</label>
+          <textarea id="message-input" rows="1" maxlength="5000" placeholder="Nhập yêu cầu IT của bạn…" autofocus></textarea>
+          <button id="send-button" type="submit"><span>Gửi</span><span aria-hidden="true">↑</span></button>
+          <p>Enter để gửi · Shift + Enter để xuống dòng</p>
+        </form>
+      </section>
+    </main>
+    <template id="trace-template">
+      <details class="trace"><summary><span>⌘</span> Tool trace <small></small></summary><div class="trace-content"></div></details>
+    </template>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
