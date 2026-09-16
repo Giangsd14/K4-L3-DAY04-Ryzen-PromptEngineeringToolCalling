@@ -55,6 +55,13 @@ Mỗi thành viên sao chép mẫu bên dưới và tự viết, tự commit ph�
 - **Điều đã học:** Cơ chế quản lý trạng thái (State Transition) và thiết lập Safety Boundary trong Prompt Engineering; đọc các log JSON trong `runs/` để phân tích lỗi Tool Call (`wrong_boundary`, `extra_tool_call`) và thành thạo quy trình Empirical Iteration.
 - **AI/công cụ đã dùng và cách kiểm tra:** Gemini AI hỗ trợ phân tích log lỗi và soạn thảo quy tắc prompt; VS Code, Git CLI và Python (`run_eval.py`) dùng để thực thi kiểm thử. Kiểm tra đối chiếu trực tiếp kết quả pass các case mục tiêu (H12, M05, M09, M07) trên bộ [`eval_base.json`](starter_v0/data/eval_base.json).
 
+### Nguyễn Thị Bảo Trang — 2A202602580
+
+- Phần việc và file/commit/PR: Tôi xây dựng giao diện web demo độc lập cho IT Helpdesk trong [`starter_v0/ui/`](starter_v0/ui/): backend `app.py`, giao diện chat (`static/index.html`, `static/styles.css`, `static/app.js`) và hướng dẫn chạy trong [`ui/README.md`](starter_v0/ui/README.md). UI tận dụng agent loop, tool registry, provider và transcript sẵn có, không thay đổi prompt, tool, eval hay CLI. Thay đổi được lưu ở commit `1ca56fd` (`feat(ui): add standalone helpdesk demo interface`).
+- Quyết định, khó khăn và cách xử lý: Tôi chọn không tạo một luồng agent riêng cho UI mà import trực tiếp runtime hiện có để demo phản ánh đúng tool call thực. UI tạo phiên mới khi đổi provider/model/version để không trộn lịch sử; khi reset, transcript của phiên cũ vẫn được lưu. Tôi bổ sung tool trace để người dùng xem tool, tham số và kết quả thay vì chỉ tin vào câu trả lời.
+- Điều đã học: Giao diện cho agent cần tạo trải nghiệm dùng được nhưng không được che mất bằng chứng thực thi. Việc tách UI khỏi prompt, tool và eval giúp dễ tích hợp, đồng thời giữ nguyên khả năng so sánh các phiên bản agent. Tôi cũng nhận ra phải kết hợp an toàn ở backend (giới hạn request, không lộ chi tiết lỗi provider) với trình bày minh bạch ở frontend.
+- AI/công cụ đã dùng và cách kiểm tra: Tôi dùng Codex để hỗ trợ rà soát cấu trúc UI và Git để lưu/đối chiếu thay đổi. Tôi kiểm tra UI theo hướng dẫn trong `ui/README.md`: chạy với provider/version đã chọn, gửi tin nhắn, đổi cấu hình, tạo phiên mới và đối chiếu tool trace cùng transcript JSON được lưu trong `starter_v0/transcripts/`. Không đưa API key, token, mật khẩu hay dữ liệu thực vào chat/transcript.
+
 ### Mẫu cho thành viên khác
 
 - Phần việc và file/commit/PR:
