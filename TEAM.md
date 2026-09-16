@@ -28,9 +28,16 @@
 
 ## INDIVIDUAL
 
-Sao chép mục này cho từng thành viên.
+Mỗi thành viên sao chép mẫu bên dưới và tự viết, tự commit phần của mình.
 
-### Họ và tên — MSSV
+### Nguyễn Tất Đạt — 2A202602578
+
+- Phần việc và file/commit/PR: Thiết lập baseline và workflow đánh giá v0 (`73c2c5e`); ghi evidence run v2 (`833f776`); hoàn thiện routing/xác nhận ticket để chạy v3 base, adversarial và group (`8750748`); chốt [`version_log.csv`](starter_v0/artifacts/version_log.csv) (`c320435`) và tổng hợp phần chung TEAM (`b083b58`). Evidence run: [`v0 base`](starter_v0/runs/v0_B_base_openai_20260915T201815100931.json), [`v2 base`](starter_v0/runs/v2_B_base_openai_20260915T225924746964.json), [`v3 adversarial`](starter_v0/runs/v3_B_adversarial_openai_20260916T081224410943.json), [`v3 group`](starter_v0/runs/v3_B_group_openai_20260916T081245553232.json).
+- Quyết định, khó khăn và cách xử lý: Dùng v0 làm baseline thay vì chỉ mô tả lỗi; sau khi v1 giảm `case_accuracy` từ 0.7000 xuống 0.6667, tiếp tục ghi nhận kết quả đúng thực tế. Ưu tiên bind confirmation với payload hiện hành ở v2, sau đó kiểm tra v3 bằng cả base, adversarial và group; v3 đạt lần lượt `30/30`, `12/12` và `10/10` với `provider_error_cases = 0`.
+- Điều đã học: Metric tốt chỉ đáng tin khi có run, số case đo bằng tổng case và provider không lỗi; với action tool như `create_ticket`, phải kiểm tra thêm `actual_tool_calls`, `tool_results` và ticket sinh ra, không chỉ nhìn PASS/FAIL.
+- AI/công cụ đã dùng và cách kiểm tra: Codex hỗ trợ tổng hợp evidence và soạn tài liệu; Git dùng để đối chiếu commit; đọc summary, actual tool calls và tool results trong các run JSON. Các số liệu đã kiểm tra lại với [`version_log.csv`](starter_v0/artifacts/version_log.csv) và 6 file trong [`runs/`](starter_v0/runs/).
+
+### Mẫu cho thành viên khác
 
 - Phần việc và file/commit/PR:
 - Quyết định, khó khăn và cách xử lý:
