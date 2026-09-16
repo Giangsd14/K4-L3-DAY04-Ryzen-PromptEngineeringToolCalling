@@ -14,7 +14,7 @@
 
 | Họ và tên | MSSV | GitHub | Vai trò và công việc | File/commit/PR |
 |---|---|---|---|---|
-| Nguyễn Thanh Giang | 2A202602576 | [Giangsd14](https://github.com/Giangsd14) | Đại diện nhóm; làm rõ contract identifier và thiếu thông tin cho v1; chạy và ghi evidence v1. | `b918532`, `f4c238d`; [`v1 run`](starter_v0/runs/v1_B_base_openai_20260915T203436781619.json); [`version_log.csv`](starter_v0/artifacts/version_log.csv) |
+| Nguyễn Thanh Giang | 2A202602576 | [Giangsd14](https://github.com/Giangsd14) | Đại diện nhóm; làm rõ contract identifier và thiếu thông tin cho v1; chạy và ghi evidence v1; test và update UI. | `b918532`, `f4c238d`; [`v1 run`](starter_v0/runs/v1_B_base_openai_20260915T203436781619.json); [`version_log.csv`](starter_v0/artifacts/version_log.csv); `fbd2019`|
 | Nguyễn Tất Đạt | 2A202602578 | [Nguyen Dat/ Gaohonggg](https://github.com/Gaohonggg) | Thiết lập baseline v0, ghi evidence v2; đánh giá v3 trên bộ adversarial và 10 case nhóm; chốt version log. | `73c2c5e`, `833f776`, `8750748`, `c320435`; [`v0 run`](starter_v0/runs/v0_B_base_openai_20260915T201815100931.json), [`v2 run`](starter_v0/runs/v2_B_base_openai_20260915T225924746964.json), [`v3 adversarial`](starter_v0/runs/v3_B_adversarial_openai_20260916T081224410943.json), [`v3 group`](starter_v0/runs/v3_B_group_openai_20260916T081245553232.json) |
 | Nguyễn Thị Bảo Trang | 2A202602580 | [ntbtrangforwork-fintech](https://github.com/ntbtrangforwork-fintech) | Xây giao diện demo helpdesk độc lập. | `1ca56fd` (`feat(ui): add standalone helpdesk demo interface`) |
 | Nguyễn Hồng Cường | 2A202602415 | [hongcuong26-debug](https://github.com/hongcuong26-debug) | Ràng buộc xác nhận tạo ticket với payload hiện hành cho v2. | `ab4335f`; [`v2 run`](starter_v0/runs/v2_B_base_openai_20260915T225924746964.json); [`version_log.csv`](starter_v0/artifacts/version_log.csv) |
@@ -62,10 +62,30 @@ Mỗi thành viên sao chép mẫu bên dưới và tự viết, tự commit ph�
 - Điều đã học: Giao diện cho agent cần tạo trải nghiệm dùng được nhưng không được che mất bằng chứng thực thi. Việc tách UI khỏi prompt, tool và eval giúp dễ tích hợp, đồng thời giữ nguyên khả năng so sánh các phiên bản agent. Tôi cũng nhận ra phải kết hợp an toàn ở backend (giới hạn request, không lộ chi tiết lỗi provider) với trình bày minh bạch ở frontend.
 - AI/công cụ đã dùng và cách kiểm tra: Tôi dùng Codex để hỗ trợ rà soát cấu trúc UI và Git để lưu/đối chiếu thay đổi. Tôi kiểm tra UI theo hướng dẫn trong `ui/README.md`: chạy với provider/version đã chọn, gửi tin nhắn, đổi cấu hình, tạo phiên mới và đối chiếu tool trace cùng transcript JSON được lưu trong `starter_v0/transcripts/`. Không đưa API key, token, mật khẩu hay dữ liệu thực vào chat/transcript.
 
-### Mẫu cho thành viên khác
+
+### Nguyễn Thanh Giang — 2A202602576
 
 - Phần việc và file/commit/PR:
+  - Cài đặt môi trường, chạy preflight và chạy **baseline v0** (`73c2c5e Run v0 baseline and set up team workflow`).
+  - Phân tích kết quả v0: tổng hợp 9 case fail thành 3 nhóm lỗi (`wrong_tool`, `missing_info`, `wrong_boundary`), xác định nguyên nhân và ưu tiên sửa.
+  - Đặt giả thuyết v1, sửa `artifacts/tools.yaml`: bổ sung điều kiện bắt buộc dùng `clarify` khi thiếu asset ID / employee ID, ràng buộc routing cho `inspect_device` và `lookup_user`, điều kiện hỏi lại môi trường không xác định cho `check_service_status` (`b918532 feat(tools): clarify identifier and missing-information contracts for v1`).
+  - Chạy eval v1, đọc kết quả, ghi nhận vào `artifacts/version_log.csv` (`f4c238d test(eval): record v1 base evaluation evidence`).
+  - Khởi tạo workflow nhóm, phân công song song cho 5 thành viên sau khi có baseline v0.
+
 - Quyết định, khó khăn và cách xử lý:
+  - **Quyết định:** Chọn sửa `tools.yaml` trước (thay vì `system_prompt.md`) để kiểm chứng một biến số độc lập, đúng theo nguyên tắc one-variable-at-a-time của khoa học thực nghiệm.
+  - **Khó khăn:** API key ban đầu bị hết hạn hoặc bị revoke liên tục, dẫn đến `provider_error_cases: 30` ở nhiều lần chạy sớm. Nguyên nhân là file `.env` không có newline chuẩn nên `env_loader` không parse được key. Đã khắc phục bằng cách ghi lại file `.env` đúng format UTF-8 với newline thật.
+  - **Khó khăn 2:** Chạy lệnh `python` thay vì `.\.venv\Scripts\python.exe` khiến module `openai` không được tìm thấy. Đã sửa bằng cách luôn gọi đúng executable của môi trường ảo.
+  - **Kết quả:** v1 cho thấy hypothesis bị bác — sửa tool declaration là chưa đủ để ép model tuân thủ, cần phải bổ sung quy tắc cứng trong `system_prompt.md` (bằng chứng: case accuracy giảm nhẹ từ 0.70 xuống 0.6667 ở v1).
+
 - Điều đã học:
+  - Tool Declaration (`tools.yaml`) chỉ cung cấp schema và gợi ý; nó không đủ để ép LLM thay đổi hành vi. Các quy tắc hành vi bắt buộc (Hard Rules) phải được đặt trong System Prompt mới có hiệu lực.
+  - Quy trình eval-hypothesis-fix-eval theo vòng lặp giúp tách biệt nguyên nhân thực sự gây lỗi (ví dụ: sửa 1 biến → v1 fail → chứng minh cần sửa biến khác)
+- Khi theo dõi nhóm sửa v2 (`system_prompt.md` với confirmation state transition) và v3 (multi-source decomposition), nhận ra rằng: các lỗi `wrong_boundary` được giải quyết triệt để hơn bằng việc mô hình hóa xác nhận như một state machine, chứ không chỉ bằng một câu lệnh cấm đơn giản.
+  - Để đảm bảo kết quả eval thật sự hợp lệ, cần luôn kiểm tra `provider_error_cases == 0` trước khi phân tích bất kỳ metric nào.
+
 - AI/công cụ đã dùng và cách kiểm tra:
-- Thời điểm đã tự nộp URL repo chung trên VLearn:
+  - Sử dụng AI (Antigravity IDE) để phân tích file log JSON, đề xuất cấu trúc giả thuyết và mẫu viết cho `tools.yaml`; luôn đọc lại diff trước khi commit để đảm bảo nội dung đúng với giả thuyết đặt ra.
+  - Tự review thủ công 4 case mục tiêu (H04, H10, H11, H19) trong file run JSON của v1 để xác nhận chúng vẫn fail và không phải là false positive.
+  - Dùng `git log --oneline` để đối chiếu commit hash khi điền `version_log.csv`.
+
