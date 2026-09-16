@@ -23,7 +23,7 @@
 
 - Kết quả và bằng chứng: Tất cả 6 run được dùng làm evidence đều hợp lệ theo rubric (`provider_error_cases = 0`, `measured_cases = total_cases`). Base tăng từ v0 `21/30` (70.00%), qua v1 `20/30` (66.67%) và v2 `24/30` (80.00%), đến v3 `30/30` (100.00%). v3 cũng đạt `12/12` ở adversarial và `10/10` ở bộ case nhóm. Evidence: [`version_log.csv`](starter_v0/artifacts/version_log.csv), [`runs/`](starter_v0/runs/).
 - Thay đổi hiệu quả nhất: Safety gate cùng quy tắc routing, scope, context và schema tool ở v3 đưa đầy đủ các metric của base từ v2 (`case_accuracy` 0.8000; `tool_routing_accuracy` 0.9333; `argument_accuracy` 0.8000; `multiturn_accuracy` 1.0000) lên 1.0000; đồng thời không có lỗi trong 12 case adversarial.
-- Giới hạn còn lại: v1 giảm accuracy từ 70.00% xuống 66.67%, cho thấy việc chỉ làm rõ mô tả tool chưa đủ. Kết quả 100% chỉ chứng minh trên các bộ 30 base, 12 adversarial và 10 group đã chạy; không thay thế kiểm thử trên dữ liệu thực hay các tình huống ngoài phạm vi. Ngoài ra, GitHub username của Nguyễn Tất Đạt và deadline chưa có evidence đáng tin cậy trong repository.
+- Giới hạn còn lại: v1 giảm accuracy từ 70.00% xuống 66.67%, cho thấy việc chỉ làm rõ mô tả tool chưa đủ. Kết quả 100% chỉ chứng minh trên các bộ 30 base, 12 adversarial và 10 group đã chạy; không thay thế kiểm thử trên dữ liệu thực hay các tình huống ngoài phạm vi.
 - Cách phân công và tích hợp: Nhóm dùng baseline v0 làm mốc, sau đó tách các vòng cải tiến v1 (tool contract), v2 (xác nhận payload) và v3 (safety/routing) trong `version_log.csv`. Các run tương ứng được lưu tại [`starter_v0/runs/`](starter_v0/runs/); v3 được kiểm tra thêm bằng adversarial và 10 case nhóm trước khi chốt log. UI được tích hợp qua commit `1ca56fd`.
 
 ## INDIVIDUAL
