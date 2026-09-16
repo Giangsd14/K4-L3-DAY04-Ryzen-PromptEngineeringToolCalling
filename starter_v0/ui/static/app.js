@@ -13,6 +13,25 @@ let providerModels = {};
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[char]));
 const json = (value) => escapeHtml(JSON.stringify(value ?? {}, null, 2));
 const time = () => new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date());
+function extractReply(text) {
+  if (!text) return 'Agent chưa có phản hồi.';
+  // Strip markdown code fences (```json ... ``` or ``` ... ```) before parsing
+  const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  try { const parsed = JSON.parse(stripped); return parsed.reply || text; } catch { return text; }
+}
+function addJsonPanel(item, rawText) {
+  if (!rawText) return;
+  const stripped = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  let parsed; try { parsed = JSON.parse(stripped); } catch { return; }
+  const details = document.createElement('details');
+  details.className = 'json-response';
+  const summary = document.createElement('summary');
+  summary.innerHTML = '▶ JSON response <small>intent · action · evidence_ids</small>';
+  const pre = document.createElement('pre');
+  pre.textContent = JSON.stringify(parsed, null, 2);
+  details.append(summary, pre);
+  item.append(details);
+}
 
 function scrollDown() { messages.scrollTop = messages.scrollHeight; }
 function addMessage(role, text, status = null) {
@@ -71,11 +90,10 @@ form.addEventListener('submit', async (event) => {
   event.preventDefault(); const message = input.value.trim(); if (!message) return;
   addMessage('user', message); input.value = ''; input.style.height = ''; setBusy(true);
   const typing = addMessage('assistant', 'Agent đang phân tích và gọi công cụ thật…'); typing.classList.add('typing');
-  try { const result = await api('/api/chat', { message }); typing.remove(); typing.querySelector('.bubble').textContent = result.assistant_text || 'Agent chưa có phản hồi.';
+  try { const result = await api('/api/chat', { message }); typing.classList.remove('typing'); typing.querySelector('.bubble').textContent = extractReply(result.assistant_text);
     const meta = typing.querySelector('.meta'); meta.textContent = `IT Helpdesk · ${time()}`;
     if (result.status !== 'answered') { const label = document.createElement('span'); label.className = `status ${result.status}`; label.textContent = ({ waiting_for_user:'Cần bổ sung hoặc xác nhận', provider_error:'Lỗi kết nối provider', max_tool_rounds:'Đã dừng để đảm bảo an toàn' })[result.status] || result.status; typing.append(label); }
-    addTrace(result.rounds); sessionBadge.textContent = `Transcript · ${result.transcript_id}`;
-  } catch (error) { typing.remove(); addMessage('assistant', error.message, 'provider_error'); }
+    addTrace(result.rounds); addJsonPanel(typing, result.assistant_text); sessionBadge.textContent = `Transcript · ${result.transcript_id}`;  } catch (error) { typing.remove(); addMessage('assistant', error.message, 'provider_error'); }
   finally { setBusy(false); input.focus(); scrollDown(); }
 });
 input.addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } });
