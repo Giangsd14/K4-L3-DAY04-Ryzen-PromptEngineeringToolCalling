@@ -7,23 +7,24 @@
 - Tên nhóm: Ryzen
 - Người đại diện / MSSV: Nguyễn Thanh Giang / 2A202602576
 - Tên repo: `K4-L3-DAY04-Ryzen-PromptEngineeringToolCalling`
-- URL repo, nhánh nộp, commit chốt:
+- URL repo, nhánh nộp, commit chốt: `https://github.com/Giangsd14/K4-L3-DAY04-Ryzen-PromptEngineeringToolCalling` — `main`
 - Deadline áp dụng và link thông báo đổi hạn nếu có:
 
 ## Thành viên
 
 | Họ và tên | MSSV | GitHub | Vai trò và công việc | File/commit/PR |
 |---|---|---|---|---|
-| Nguyễn Tất Đạt | 2A202602578 | | | |
-| Nguyễn Thị Bảo Trang | 2A202602580 | | | |
-| Nguyễn Hồng Cường | 2A202602415 | | | |
-| Đặng Thế Vinh | 2A202602587 | | | |
+| Nguyễn Thanh Giang | 2A202602576 | [Giangsd14](https://github.com/Giangsd14) | Đại diện nhóm; làm rõ contract identifier và thiếu thông tin cho v1; chạy và ghi evidence v1. | `b918532`, `f4c238d`; [`v1 run`](starter_v0/runs/v1_B_base_openai_20260915T203436781619.json); [`version_log.csv`](starter_v0/artifacts/version_log.csv) |
+| Nguyễn Tất Đạt | 2A202602578 | [Nguyen Dat](https://github.com/Gaohonggg) | Thiết lập baseline v0, ghi evidence v2; đánh giá v3 trên bộ adversarial và 10 case nhóm; chốt version log. | `73c2c5e`, `833f776`, `8750748`, `c320435`; [`v0 run`](starter_v0/runs/v0_B_base_openai_20260915T201815100931.json), [`v2 run`](starter_v0/runs/v2_B_base_openai_20260915T225924746964.json), [`v3 adversarial`](starter_v0/runs/v3_B_adversarial_openai_20260916T081224410943.json), [`v3 group`](starter_v0/runs/v3_B_group_openai_20260916T081245553232.json) |
+| Nguyễn Thị Bảo Trang | 2A202602580 | [ntbtrangforwork-fintech](https://github.com/ntbtrangforwork-fintech) | Xây giao diện demo helpdesk độc lập. | `1ca56fd` (`feat(ui): add standalone helpdesk demo interface`) |
+| Nguyễn Hồng Cường | 2A202602415 | [hongcuong26-debug](https://github.com/hongcuong26-debug) | Ràng buộc xác nhận tạo ticket với payload hiện hành cho v2. | `ab4335f`; [`v2 run`](starter_v0/runs/v2_B_base_openai_20260915T225924746964.json); [`version_log.csv`](starter_v0/artifacts/version_log.csv) |
+| Đặng Thế Vinh | 2A202602587 | [HinvGnad](https://github.com/HinvGnad) | Hoàn thiện safety gate, routing/scope/context và schema tool cho v3; cập nhật bộ eval nhóm. | `55e53b6`, `60c6f2e`, `b638c29`, `c6d5567`; [`v3 base`](starter_v0/runs/v3_B_base_openai_20260916T081150078420.json); [`version_log.csv`](starter_v0/artifacts/version_log.csv) |
 ## Nhận xét chung
 
-- Kết quả và bằng chứng:
-- Thay đổi hiệu quả nhất:
-- Giới hạn còn lại:
-- Cách phân công và tích hợp:
+- Kết quả và bằng chứng: Tất cả 6 run được dùng làm evidence đều hợp lệ theo rubric (`provider_error_cases = 0`, `measured_cases = total_cases`). Base tăng từ v0 `21/30` (70.00%), qua v1 `20/30` (66.67%) và v2 `24/30` (80.00%), đến v3 `30/30` (100.00%). v3 cũng đạt `12/12` ở adversarial và `10/10` ở bộ case nhóm. Evidence: [`version_log.csv`](starter_v0/artifacts/version_log.csv), [`runs/`](starter_v0/runs/).
+- Thay đổi hiệu quả nhất: Safety gate cùng quy tắc routing, scope, context và schema tool ở v3 đưa đầy đủ các metric của base từ v2 (`case_accuracy` 0.8000; `tool_routing_accuracy` 0.9333; `argument_accuracy` 0.8000; `multiturn_accuracy` 1.0000) lên 1.0000; đồng thời không có lỗi trong 12 case adversarial.
+- Giới hạn còn lại: v1 giảm accuracy từ 70.00% xuống 66.67%, cho thấy việc chỉ làm rõ mô tả tool chưa đủ. Kết quả 100% chỉ chứng minh trên các bộ 30 base, 12 adversarial và 10 group đã chạy; không thay thế kiểm thử trên dữ liệu thực hay các tình huống ngoài phạm vi. Ngoài ra, GitHub username của Nguyễn Tất Đạt và deadline chưa có evidence đáng tin cậy trong repository.
+- Cách phân công và tích hợp: Nhóm dùng baseline v0 làm mốc, sau đó tách các vòng cải tiến v1 (tool contract), v2 (xác nhận payload) và v3 (safety/routing) trong `version_log.csv`. Các run tương ứng được lưu tại [`starter_v0/runs/`](starter_v0/runs/); v3 được kiểm tra thêm bằng adversarial và 10 case nhóm trước khi chốt log. UI được tích hợp qua commit `1ca56fd`.
 
 ## INDIVIDUAL
 
