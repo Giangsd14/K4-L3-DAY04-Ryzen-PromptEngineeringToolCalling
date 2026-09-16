@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import secrets
 import sys
 from datetime import datetime
@@ -45,13 +47,52 @@ MODEL_OPTIONS = {
     "anthropic": ["claude-haiku-4-5-20251001"],
 }
 VERSION_OPTIONS = ["v0", "v1", "v2", "v3"]
+PROVIDER_KEY_ENV = {
+    "openrouter": "OPENROUTER_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "gemini": "GEMINI_API_KEY",
+    "anthropic": "ANTHROPIC_API_KEY",
+}
+
+
+def provider_is_configured(provider_name: str) -> bool:
+    return bool(os.getenv(PROVIDER_KEY_ENV[provider_name]))
+
+
+def choose_initial_provider(requested_provider: str | None) -> str:
+    if requested_provider and provider_is_configured(requested_provider):
+        return requested_provider
+    for provider_name in ("openrouter", "openai", "gemini", "anthropic"):
+        if provider_is_configured(provider_name):
+            return provider_name
+    raise RuntimeError("Không tìm thấy API key provider. Thêm ít nhất một key vào .env trước khi chạy UI.")
+
+
+def model_name_is_safe(model: str) -> bool:
+    return bool(re.fullmatch(r"[A-Za-z0-9._:/@-]{1,160}", model))
+
+
+def safe_provider_message(exc: Exception) -> tuple[str, str]:
+    """Return a useful UI error without exposing request details or credentials."""
+    message = str(exc).lower()
+    if "missing api key" in message:
+        return "missing_api_key", "Provider này chưa có API key trong file .env. Hãy chọn provider đã cấu hình hoặc bổ sung key rồi chạy lại UI."
+    if "401" in message or "authentication" in message or "invalid api key" in message:
+        return "authentication_failed", "API key bị provider từ chối. Kiểm tra lại key trong .env và khởi động lại UI."
+    if "404" in message or "model" in message and ("not found" in message or "not available" in message):
+        return "model_unavailable", "Model đã chọn không khả dụng với provider hoặc API key này. Hãy chọn model mặc định được đề xuất."
+    if "429" in message or "rate limit" in message or "quota" in message:
+        return "rate_limited", "Provider đang giới hạn lượt gọi hoặc tài khoản đã hết quota. Hãy thử lại sau hoặc đổi model."
+    if "connection" in message or "network" in message or "timeout" in message:
+        return "connection_failed", "Không kết nối được tới provider. Kiểm tra mạng, VPN hoặc thử lại sau."
+    return "provider_error", "Provider không thể xử lý yêu cầu này. Hãy kiểm tra tool trace và thử model mặc định."
 
 
 class HelpdeskWebApp:
     def __init__(self, args: argparse.Namespace) -> None:
         load_lab_env(ROOT)
-        self.provider_name = args.provider
-        self.provider = make_provider(args.provider)
+        self.provider_name = choose_initial_provider(args.provider)
+        self.provider = make_provider(self.provider_name)
         self.model = args.model or getattr(self.provider, "default_model", None)
         self.history_window = args.history_window
         self.max_tool_rounds = args.max_tool_rounds
@@ -70,15 +111,23 @@ class HelpdeskWebApp:
             "model": self.model,
             "history_window": self.history_window,
             "max_tool_rounds": self.max_tool_rounds,
+            "provider_configured": provider_is_configured(self.provider_name),
             **artifact_version_dict(self.artifact),
         }
 
     def options(self) -> dict[str, Any]:
-        return {"providers": MODEL_OPTIONS, "versions": VERSION_OPTIONS}
+        return {
+            "providers": MODEL_OPTIONS,
+            "versions": VERSION_OPTIONS,
+            "provider_configured": {name: provider_is_configured(name) for name in MODEL_OPTIONS},
+            "provider_key_env": PROVIDER_KEY_ENV,
+        }
 
     def configure(self, provider_name: str, model: str, version: str, old_session_id: str | None) -> tuple[str, dict[str, Any]]:
-        if provider_name not in MODEL_OPTIONS or model not in MODEL_OPTIONS[provider_name]:
-            raise ValueError("Provider hoặc model không hợp lệ.")
+        if provider_name not in MODEL_OPTIONS or not model_name_is_safe(model):
+            raise ValueError("Provider hoặc tên model không hợp lệ.")
+        if not provider_is_configured(provider_name):
+            raise ValueError(f"Provider {provider_name} chưa có API key trong file .env.")
         if version not in VERSION_OPTIONS:
             raise ValueError("Version chỉ có thể là v0, v1, v2 hoặc v3.")
         with self.lock:
@@ -161,10 +210,11 @@ class HelpdeskWebApp:
                 assistant_text = result["assistant_text"]
                 history.extend(({"role": "user", "content": clean_text}, {"role": "assistant", "content": assistant_text}))
             except Exception as exc:  # Do not leak provider implementation details or secrets.
+                error_code, assistant_text = safe_provider_message(exc)
                 turn_record.update({
                     "status": "provider_error",
-                    "assistant_text": "Không thể kết nối agent lúc này. Kiểm tra provider và cấu hình cục bộ rồi thử lại.",
-                    "error": type(exc).__name__,
+                    "assistant_text": assistant_text,
+                    "error": error_code,
                 })
 
             turn_record["ended_at"] = now_iso()
@@ -281,7 +331,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Standalone IT Helpdesk web UI")
-    parser.add_argument("--provider", choices=["openrouter", "openai", "anthropic", "gemini"], required=True)
+    parser.add_argument("--provider", choices=["openrouter", "openai", "anthropic", "gemini"], default=None, help="Optional. UI tự chọn provider có API key nếu bỏ trống.")
     parser.add_argument("--version", required=True, help="Artifact version label, for example v3")
     parser.add_argument("--model", default=None)
     parser.add_argument("--history-window", type=int, default=5)

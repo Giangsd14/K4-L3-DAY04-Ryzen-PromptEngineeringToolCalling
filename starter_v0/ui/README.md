@@ -20,6 +20,16 @@ Tùy chọn: `--history-window 5`, `--max-tool-rounds 4`, `--host 127.0.0.1`, `-
 
 Trong sidebar, chọn provider, model và version rồi nhấn **Áp dụng cấu hình**. Model được lọc theo provider. Thao tác này tạo phiên chat mới để không trộn lịch sử giữa model hoặc version. Version thay đổi nhãn/hash artifact hiện có; để chạy đúng nội dung lịch sử v0/v1/v2, nhóm cần lưu snapshot artifact tương ứng.
 
+Chỉ provider có API key tương ứng trong `.env` mới chọn được. Với OpenRouter, bắt đầu demo bằng model mặc định `openai/gpt-4o-mini`; model khác chỉ hoạt động khi tài khoản OpenRouter của nhóm có quyền truy cập model đó.
+
+Trên mỗi máy, tạo `.env` riêng và điền **ít nhất một** key provider. Có thể bỏ `--provider` để UI tự chọn provider khả dụng đầu tiên:
+
+```powershell
+python ui/app.py --version v3 --port 5050
+```
+
+Nếu tài khoản có model riêng, chọn **Model khác…** rồi nhập đúng model ID. API key chỉ tồn tại cục bộ trong `.env`, không đi qua giao diện và không được commit.
+
 ## Evidence
 
 Mỗi lượt chat dùng agent loop và tool call thật. Transcript JSON được lưu tự động trong `starter_v0/transcripts/`; thư mục này không bị UI xóa khi bạn bấm **Cuộc trò chuyện mới**.

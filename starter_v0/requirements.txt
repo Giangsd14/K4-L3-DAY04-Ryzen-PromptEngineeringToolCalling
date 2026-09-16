@@ -6,3 +6,5 @@ google-genai>=0.8.0
 PyYAML>=6.0
 # Optional external device search:
 requests>=2.31.0
+# Web interface
+streamlit>=1.38.0

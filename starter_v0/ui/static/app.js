@@ -8,6 +8,7 @@ const providerSelect = document.querySelector('#provider-select');
 const modelSelect = document.querySelector('#model-select');
 const versionSelect = document.querySelector('#version-select');
 const applyConfigButton = document.querySelector('#apply-config');
+const customModelInput = document.querySelector('#custom-model');
 let providerModels = {};
 
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[char]));
@@ -54,10 +55,10 @@ async function api(path, body) {
   const response = await fetch(path, options); const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || 'Yêu cầu không thành công.'); return payload;
 }
-function populateModels(selectedModel) { const models = providerModels[providerSelect.value] || []; modelSelect.innerHTML = models.map((model) => `<option value="${model}">${model}</option>`).join(''); modelSelect.value = models.includes(selectedModel) ? selectedModel : models[0]; }
+function populateModels(selectedModel) { const models = providerModels[providerSelect.value] || []; modelSelect.innerHTML = `${models.map((model) => `<option value="${model}">${model}</option>`).join('')}<option value="__custom__">Model khác…</option>`; const known = models.includes(selectedModel); modelSelect.value = known ? selectedModel : '__custom__'; customModelInput.hidden = known; customModelInput.value = known ? '' : (selectedModel || ''); }
 async function loadConfig() {
   try { const [config, options] = await Promise.all([api('/api/config'), api('/api/options')]); providerModels = options.providers;
-    providerSelect.innerHTML = Object.keys(providerModels).map((provider) => `<option value="${provider}">${provider}</option>`).join('');
+    providerSelect.innerHTML = Object.keys(providerModels).map((provider) => `<option value="${provider}" ${options.provider_configured[provider] ? '' : 'disabled'}>${provider}${options.provider_configured[provider] ? '' : ' · thiếu API key'}</option>`).join('');
     versionSelect.innerHTML = options.versions.map((version) => `<option value="${version}">${version.toUpperCase()}</option>`).join('');
     providerSelect.value = config.provider; versionSelect.value = config.version; populateModels(config.model);
     document.querySelector('#provider').textContent = config.provider || '—';
@@ -66,7 +67,8 @@ async function loadConfig() {
   } catch { document.querySelector('#provider').textContent = 'Không thể tải'; }
 }
 providerSelect.addEventListener('change', () => populateModels());
-applyConfigButton.addEventListener('click', async () => { setBusy(true); try { const result = await api('/api/configure', { provider:providerSelect.value, model:modelSelect.value, version:versionSelect.value }); messages.innerHTML = ''; addMessage('assistant', result.message); document.querySelector('#provider').textContent = result.provider; document.querySelector('#model').textContent = result.model; document.querySelector('#artifact').textContent = result.artifact_version; sessionBadge.textContent = `Transcript · ${result.transcript_id}`; } catch (error) { addMessage('assistant', error.message, 'provider_error'); } finally { setBusy(false); input.focus(); } });
+modelSelect.addEventListener('change', () => { customModelInput.hidden = modelSelect.value !== '__custom__'; if (!customModelInput.hidden) customModelInput.focus(); });
+applyConfigButton.addEventListener('click', async () => { const model = modelSelect.value === '__custom__' ? customModelInput.value.trim() : modelSelect.value; if (!model) { addMessage('assistant', 'Hãy nhập tên model trước khi áp dụng cấu hình.', 'provider_error'); return; } setBusy(true); try { const result = await api('/api/configure', { provider:providerSelect.value, model, version:versionSelect.value }); messages.innerHTML = ''; addMessage('assistant', result.message); document.querySelector('#provider').textContent = result.provider; document.querySelector('#model').textContent = result.model; document.querySelector('#artifact').textContent = result.artifact_version; sessionBadge.textContent = `Transcript · ${result.transcript_id}`; } catch (error) { addMessage('assistant', error.message, 'provider_error'); } finally { setBusy(false); input.focus(); } });
 form.addEventListener('submit', async (event) => {
   event.preventDefault(); const message = input.value.trim(); if (!message) return;
   addMessage('user', message); input.value = ''; input.style.height = ''; setBusy(true);

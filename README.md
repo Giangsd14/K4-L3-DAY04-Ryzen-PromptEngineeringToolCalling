@@ -92,3 +92,32 @@ Thay `openrouter` bằng `openai`, `anthropic` hoặc `gemini` khi dùng provide
 Buổi học: **17:30–21:00**. 17:30–17:40 giới thiệu, 17:40–17:50 Kahoot, 17:50–20:25 làm nhóm, 20:25–21:00 demo. Mốc kiểm tra tại lớp là 20:25; xem [CHECKPOINTS.md](CHECKPOINTS.md).
 
 Hạn mặc định là **23:59 ngày học, Asia/Ho_Chi_Minh (UTC+07:00)**. Xem [SUBMISSION.md](SUBMISSION.md) và [RULES.md](RULES.md) để biết bản chốt và quy định nộp muộn.
+
+# Chạy Web UI (Streamlit)
+
+Từ thư mục gốc của repository, một thành viên mới có thể khởi động giao diện theo các bước sau.
+
+```powershell
+git clone <URL_REPOSITORY_CUA_NHOM>
+cd K4-L3-DAY04-Ryzen-PromptEngineeringToolCalling\starter_v0
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+```
+
+Mở `.env` cục bộ và điền **một** API key, ví dụ `OPENROUTER_API_KEY`; không commit file này. Sau đó chạy:
+
+```powershell
+streamlit run app.py
+```
+
+Streamlit sẽ in URL cục bộ (thường là `http://localhost:8501`). Trong sidebar, chọn `v0`, `v1`, `v2`, hoặc `v3`, provider và model. Đổi cấu hình hoặc nhấn **Cuộc trò chuyện mới** sẽ tạo một session mới. Sau từng message, UI tự lưu transcript JSON trong `starter_v0/transcripts/` và hiển thị tool name, arguments, result/error trong expandable trace. Password, token, API key, OTP và MFA được redact trước khi hiển thị/lưu.
+
+Để kiểm tra provider trước khi demo và chạy benchmark:
+
+```powershell
+python scripts/preflight_provider.py --provider openrouter
+python run_eval.py --provider openrouter --version v3 --suite base --eval-cases data/eval_base.json
+python run_eval.py --provider openrouter --version v3 --suite group --eval-cases data/eval_group.json
+```

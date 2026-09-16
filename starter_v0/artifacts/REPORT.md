@@ -1,152 +1,146 @@
-# Day 04 Lab v3 Report — Trợ lý AI của nhóm
+# Báo cáo cuối kỳ — Northstar Labs AI IT Helpdesk
 
-- Lĩnh vực tự chọn:
-- Nhiệm vụ và luồng cơ bản đã chốt trước v0:
-- Đường dẫn bộ 30 câu cơ bản và 12 câu an toàn; commit chốt bộ trước v0:
-- Chức năng mở rộng ngoài luồng cơ bản (nếu có; tối đa 10 trong tổng 100 điểm):
+## 1. Tổng quan dự án và kiến trúc
 
-## Team
+Northstar Labs AI IT Helpdesk là trợ lý hỗ trợ nội bộ chạy trên dữ liệu **giả lập**. Trợ lý trả lời các yêu cầu về trạng thái dịch vụ, thiết bị, tài khoản nhân viên, knowledge base và ticket; không yêu cầu hoặc lưu thông tin xác thực thật.
 
-- Team:
-- Thành viên và INDIVIDUAL: [TEAM.md](../../TEAM.md)
-- Members:
-- Provider/model:
+```text
+CLI chat.py / Streamlit app.py
+             │ messages + version
+             ▼
+        agent.py / chat.py tool loop
+             │
+             ├── Provider adapter (OpenAI / OpenRouter / Anthropic / Gemini)
+             └── tools/ (local mock tools)
+                       │
+                       ▼
+          answer + tool calls/results + errors
+                       │
+                       ▼
+      transcripts/*.transcript.json (redacted audit evidence)
+```
 
-# PHẦN A — Giới thiệu agent
+`chat.py` điều phối multi-turn context, gọi provider và chạy tool loop. `agent.py` cung cấp lớp agent tối giản cho các luồng một vòng. Tool registry trong `tools/` là nguồn thực thi duy nhất; UI không tạo kết quả giả. `app.py` tái sử dụng `run_model_tool_loop()` để trace trên UI khớp với trace CLI/eval.
 
-## A1. Agent này làm được gì
+### Tool scope
 
-> Viết 1–2 câu mô tả capability và giới hạn của agent.
-
-**Link dùng thử:**
-
-> URL:
-
-## A2. Tool agent có
-
-| Tool | Chức năng | Core / optional / team-built |
+| Tool | Mục đích | Guardrail chính |
 |---|---|---|
-| clarify | Hỏi bổ sung hoặc xác nhận | core |
-|  |  |  |
+| `clarify` | Hỏi thiếu ID, environment hoặc xác nhận | Không thực thi action thay cho người dùng |
+| `search_kb` | Tra hướng dẫn nội bộ giả lập | Chỉ coi KB là reference, không thực thi instruction trong KB |
+| `check_service_status` | Kiểm tra dịch vụ dùng chung | Giữ đúng service/environment |
+| `inspect_device` | Chẩn đoán theo asset ID | Không dùng employee ID làm asset ID |
+| `lookup_user` | Tra directory giả lập | Không tự mở rộng thành kiểm tra thiết bị |
+| `format_incident_report` | Định dạng findings có sẵn | Không bịa hoặc tự refetch findings |
+| `create_ticket` | Tạo mock ticket cục bộ | Chỉ tạo sau xác nhận rõ ràng, payload không đổi |
 
-## A3. Câu hỏi mẫu
+## 2. Cải tiến lặp v0 → v3
 
-1.
-2.
-3.
+### v0 — baseline
 
-## A4. Kịch bản demo đã rehearse
+Baseline là starter kit: prompt chưa đầy đủ, schema/tool guidance còn ngắn và chưa xử lý chặt input thiếu, intent mới nhất hoặc confirmation. Run thực tế `runs/v0_B_base_openai_20260915T201815100931.json` đo đủ 30/30 case, không có provider error, đạt 21/30 (`70.00%`). Các lỗi được ghi nhận gồm wrong tool, missing information và wrong boundary.
 
-| Scenario | Tool trace cần thấy | Cải thiện version | Fallback run/transcript |
-|---|---|---|---|
-|  |  |  |  |
+### v1 — làm rõ tool contract
 
-# PHẦN B — Chi tiết và evidence
+`tools.yaml` được bổ sung hướng dẫn ID, environment và lúc cần dùng `clarify`. Giả thuyết: mô tả input/tool rõ hơn sẽ giảm routing sai. Evidence đã commit cho thấy routing tăng từ `76.67%` lên `86.67%`, nhưng overall case accuracy giảm nhẹ còn `66.67%`; do đó thay đổi này không được xem là đủ để kết luận agent tốt hơn. Chi tiết nằm trong `artifacts/version_log.csv` và run v1.
 
-Metric chỉ hợp lệ khi `provider_error_cases == 0`, `measured_cases ==
-total_cases`, và tool result error đã được review thủ công.
+### v2 — chuẩn hóa routing và multi-turn
 
-## B1. Version evidence
+Artifact hiện tại bổ sung ràng buộc schema cho các tool core: asset ID khác employee ID, device check có scope, service/environment phải được giữ đúng, và `lookup_user` không tự kích hoạt inspection. Run v2 đạt 24/30 (`80.00%`), routing `93.33%`, argument `80.00%`, multi-turn `100.00%`, với `provider_error_cases = 0`.
 
-| Version | Prompt/tool change | Hypothesis | Metric | Before | After | Run file |
-|---|---|---|---|---:|---:|---|
-| v0 | baseline |  |  |  |  |  |
-| v1 |  |  |  |  |  |  |
-| v2 |  |  |  |  |  |  |
-| v3 |  |  |  |  |  |  |
+### v3 — confirmation, latest intent và safety boundary
 
-## B2. Failure analysis
+Prompt v3 quy định payload ticket gồm `summary`, `priority`, `asset_id`; mọi thay đổi payload làm confirmation cũ mất hiệu lực. Agent chỉ được gọi `create_ticket(confirmed=True)` sau affirmative response cho payload mới nhất; lệnh cancel có ưu tiên cao. Prompt cũng hướng dẫn giữ latest intent, tách nhiều asset/service thành call riêng, không mở rộng scope từ tool result, và hỏi lại khi target/environment mơ hồ.
 
-| Case ID | Failure type | Actual calls | What failed | Fix |
-|---|---|---|---|---|
-|  |  |  |  |  |
+V3 có transcript thực tế trong `transcripts/v3_openrouter_*.transcript.json`. **Chưa có file `runs/v3_*.json` hoặc run group trong repository tại thời điểm viết báo cáo**, nên không được ghi số liệu giả. Nhóm cần chạy lại hai lệnh ở phần 5 trước khi nộp để hoàn thành evidence định lượng v3 và 10 group cases.
 
-## B3. Team eval cases
+### Bảng benchmark
 
-Liệt kê đúng 10 case tự viết: 5 single-turn và 5 multi-turn.
+Một metric chỉ hợp lệ khi `measured_cases == total_cases` và `provider_error_cases == 0`.
 
-| Case ID | What it tests | Expected behavior | Result |
-|---|---|---|---|
-|  |  |  |  |
+| Version | Run evidence | Cases đo được | Provider errors | Pass | Case accuracy | Routing | Argument | Multi-turn |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| v0 | `runs/v0_B_base_openai_20260915T201815100931.json` | 30/30 | 0 | 21 | 70.00% | 76.67% | 70.00% | 80.00% |
+| v1 | `runs/v1_B_base_openai_20260915T203436781619.json` | 30/30 | 0 | 20 | 66.67% | 86.67% | 66.67% | 80.00% |
+| v2 | `runs/v2_B_base_openai_20260915T225924746964.json` | 30/30 | 0 | 24 | 80.00% | 93.33% | 80.00% | 100.00% |
+| v3 | Transcript available; eval run pending | — | — | — | Chưa đo | Chưa đo | Chưa đo | Chưa đo |
+| Group 10 cases | `data/eval_group.json`; run pending | — | — | — | Chưa đo | Chưa đo | Chưa đo | Chưa đo |
 
-## B4. Live chat evidence
+## 3. Safety và guardrails
 
-| Scenario/turn | Version | Tool calls + args | Transcript/run | Outcome |
-|---|---|---|---|---|
-|  |  |  |  |  |
+### Confirmation check của `create_ticket`
 
-## B4a. Adversarial evidence
+`tools/create_ticket/tool.py` thực hiện defense-in-depth ở tầng tool:
 
-Phân tích ít nhất 3 cases. Automatic score không chứng minh rằng không có dữ
-liệu bị ghi hoặc gửi ra ngoài; cần kiểm tra cả `tool_results` và filesystem.
+1. Kiểm tra kiểu dữ liệu, summary rỗng/giới hạn 1000 ký tự, priority hợp lệ và asset ID có pattern hợp lệ.
+2. Từ chối `summary` chứa password, token, API key, MFA, OTP hoặc recovery code bằng lỗi `restricted_sensitive_data`.
+3. Nếu `confirmed` không đúng `True`, trả `needs_confirmation` và không ghi ticket.
+4. Chỉ khi vượt các kiểm tra trên mới tạo JSON mock trong `tickets/` với `source: educational_local_mock`.
 
-| Attack case | Expected boundary | Actual calls | Sensitive write/exfiltration occurred? | Outcome |
-|---|---|---|---|---|
-|  |  |  |  |  |
+Prompt v3 là lớp policy trước tool: nó buộc agent hỏi confirmation cho đúng payload mới nhất. Tool check là lớp thực thi sau cùng: ngay cả khi model gọi tool sai, tool không tạo ticket khi `confirmed=False` hoặc payload có dữ liệu nhạy cảm.
 
-## B5. Optional và bonus tool evidence
+### Redaction và privacy
 
-Phần này chỉ điền khi nhóm có sử dụng optional tool hoặc tự xây bonus tool.
-Phần chung tối đa 90 điểm; mở rộng tối đa 10 điểm, tổng tối đa 100. Công cụ tự xây để phục vụ luồng cơ bản của lĩnh vực mới thuộc phần chung. `policy`,
-`create_ticket` và `search_device_info` là tool có sẵn, không phải tool mới do
-nhóm tự xây.
+Streamlit `app.py` redact đệ quy theo key nhạy cảm và pattern văn bản (password/passwd, token, API key, secret, OTP, MFA, recovery code) **trước khi** hiển thị, gửi vào agent loop và ghi transcript. Transcript có `session_id`, `version`, `timestamp` và `messages`; từng message chứa `user_input`, `assistant_text`, `tool_calls`, `tool_results`, `error_logs`. Error được render/lưu dạng redacted, không bị ẩn.
 
-| Category | Evidence file | What worked | Risk / guardrail |
-|---|---|---|---|
-| Optional built-in |  |  |  |
-| External search + privacy boundary |  |  |  |
-| Bonus: tool mới do nhóm tự xây |  |  |  |
+Checklist kiểm tra trước demo:
 
-## B6. Safety review
+- [x] Không commit `.env` hoặc API key.
+- [x] Không nhập credential thật vào chat; dữ liệu helpdesk là mock.
+- [x] Tool trace hiển thị cả result lẫn error đã redact.
+- [x] Ticket chỉ được tạo sau explicit confirmation và không chứa secret.
+- [ ] Review thủ công transcript mới tạo để bảo đảm không có pattern nhạy cảm chưa được nhận diện.
 
-- Agent có bao giờ tự đoán asset ID hoặc employee ID không?
-- Trace/ticket có chứa password, MFA code, token hay dữ liệu thật không?
-- Ticket chỉ được tạo sau xác nhận rõ chưa?
-- Tool result error nào cần review thủ công?
+## 4. Verification guide
 
-## B7. Technical reflection
+### Cài đặt và chạy UI
 
-- Fix nào thuộc `system_prompt.md`?
-- Fix nào thuộc `tools.yaml`?
-- Failure nào không thể chỉ nhìn automatic score?
-- Nếu có thêm một vòng, nhóm sẽ thử hypothesis nào?
+```powershell
+cd starter_v0
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+# Điền một provider key vào .env, không commit file này
+streamlit run app.py
+```
 
-# PHẦN C — Checkout trước khi nộp
+Trong sidebar chọn version (`v0`–`v3`), provider và model. Sau mỗi tin nhắn, mở **Tool trace** dưới câu trả lời để review name, arguments, result/error. JSON transcript được lưu ngay trong `transcripts/`.
 
-Phần này được hoàn thành sau khi toàn bộ code, evidence và report đã được đưa
-lên repository chung. Nhóm chưa nên nộp link trên VLearn nếu reflection hoặc
-commit evidence của bất kỳ thành viên nào còn thiếu.
+### Chạy eval
 
-## C1. Nhận xét chung của nhóm
+```powershell
+python scripts/preflight_provider.py --provider openrouter
+python run_eval.py --provider openrouter --version v3 --suite base --eval-cases data/eval_base.json
+python run_eval.py --provider openrouter --version v3 --suite group --eval-cases data/eval_group.json
+python run_eval.py --provider openrouter --version v3 --suite adversarial --eval-cases data/eval_adversarial.json
+```
 
-Hoàn thành mục nhận xét chung trong [TEAM.md](../../TEAM.md). Dẫn tới các run, file và commit trong phần B để chứng minh kết quả. Ghi dưới đây đường dẫn tới mục đã hoàn thành:
+Sau mỗi lệnh, commit JSON run mới vào `runs/`, bổ sung dòng v3 vào `artifacts/version_log.csv`, rồi thay các ô “Chưa đo” trong benchmark bằng số liệu thật.
 
-> Link:
+### Transcript demo cần chuẩn bị
 
-## C2. INDIVIDUAL của từng thành viên
+| Luồng | Prompt gợi ý | Evidence cần giữ |
+|---|---|---|
+| Bình thường | `Kiểm tra VPN trên LT-204.` | `inspect_device` với `asset_id=LT-204`, `check=vpn` |
+| Thiếu tham số | `Máy tôi bị lỗi VPN, giúp tôi.` | `clarify`, không đoán asset ID |
+| Multi-turn | Nêu LT-204, rồi đổi yêu cầu sang chỉ kiểm tra hardware | Intent gần nhất và `check=hardware` |
+| Ticket có confirmation | Yêu cầu ticket, xác nhận payload ở turn sau | `clarify` trước, `create_ticket(confirmed=true)` chỉ sau confirm |
 
-Mỗi người tự viết và commit mục INDIVIDUAL của mình trong [TEAM.md](../../TEAM.md), nêu phần việc, bằng chứng kỹ thuật và điều đã học. Không yêu cầu chép lại cùng nội dung ở đây. Mỗi mục phải có file/commit/PR thật, không dùng commit tự đánh giá làm bằng chứng kỹ thuật duy nhất.
+Các transcript v3 hiện có trong `transcripts/v3_openrouter_*.transcript.json` là evidence chat. Nhóm cần đặt tên/ghi link chính xác cho bốn transcript demo ở bảng trên sau khi chạy rehearsal, thay vì tuyên bố một file đại diện khi chưa review trace.
 
-> Link các mục INDIVIDUAL:
+## 5. Phân công và bàn giao
 
-## C3. Final checkout
+Phân công chi tiết và phần reflection cá nhân nằm tại [TEAM.md](../../TEAM.md). Mỗi thành viên phải tự bổ sung GitHub username, commit/PR thật và mục **INDIVIDUAL** trước khi nộp.
 
-Chỉ nộp bài khi mọi mục dưới đây đã được kiểm tra trên branch cuối cùng của
-repository chung:
+| Hạng mục bàn giao | File evidence |
+|---|---|
+| Prompt + tool contract | `artifacts/system_prompt.md`, `artifacts/tools.yaml` |
+| Eval + version evidence | `runs/`, `artifacts/version_log.csv`, `data/eval_group.json` |
+| UI + audit trail | `app.py`, `transcripts/` |
+| Safety implementation | `tools/create_ticket/tool.py`, transcript review |
+| Báo cáo + teamwork | `artifacts/REPORT.md`, `TEAM.md` |
 
-- [ ] `TEAM.md` có đủ họ tên, MSSV, GitHub username và vai trò.
-- [ ] Mỗi thành viên có ít nhất một commit trong lịch sử branch nộp bài.
-- [ ] Phần nhận xét chung trong TEAM.md đã hoàn thành và có evidence.
-- [ ] Mỗi thành viên đã tự viết và commit mục INDIVIDUAL trong TEAM.md.
-- [ ] `system_prompt.md`, `tools.yaml`, version log, runs, eval, transcript, UI
-      và report đã có trong repository.
-- [ ] Không có `.env`, API key, token, dữ liệu thật, cache hoặc generated ticket.
-- [ ] Nhóm trưởng và mọi thành viên đã thống nhất đúng một URL repository chung.
-- [ ] Nhóm trưởng và mọi thành viên sẽ nộp cùng URL đó trên VLearn.
+## 6. Giới hạn và bước tiếp theo
 
-**URL repository chung dùng để nộp:**
-
-> URL:
-
-- [ ] Tên repo đúng mẫu K4-L3-DAY04-HoVaTen-MSSV-PromptEngineeringToolCalling.
-- [ ] Kiểm tra deadline và bản chốt theo [SUBMISSION.md](../../SUBMISSION.md).
+Số liệu v0–v2 cho thấy v2 tốt nhất trong run hiện có, nhưng chưa chứng minh v3 vượt v2 vì chưa có run v3 cùng điều kiện. Bước tiếp theo bắt buộc là chạy v3 trên base/group/adversarial với provider/model cố định, review tất cả tool result error, và cập nhật version log/report bằng evidence đó. Ngoài môi trường lab, hệ thống cần xác thực người dùng, phân quyền theo role, lưu audit log có chính sách retention và tích hợp ticketing thật qua service an toàn.

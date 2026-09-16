@@ -1,0 +1,28 @@
+{
+  "transcript_id": "v2_openrouter_20260915T235733705313",
+  "version": "v2",
+  "artifact_version": "v2+p28891b636a80+t6f0967d5db69",
+  "prompt_hash": "28891b636a800d8b68d06125f008b4ed9c2f70216842ff9f0b56b092107cfa7d",
+  "tools_hash": "6f0967d5db6916d17ef123779645b565d207c394ebb430b87f64e9a1db535652",
+  "provider": "openrouter",
+  "model": "openai/gpt-4o-mini",
+  "system_prompt": "C:\\Users\\oanht\\OneDrive\\BTrang\\VinUni\\K4-L3-DAY04-Ryzen-PromptEngineeringToolCalling\\starter_v0\\artifacts\\system_prompt.md",
+  "tools": "C:\\Users\\oanht\\OneDrive\\BTrang\\VinUni\\K4-L3-DAY04-Ryzen-PromptEngineeringToolCalling\\starter_v0\\artifacts\\tools.yaml",
+  "history_window": 5,
+  "max_tool_rounds": 4,
+  "created_at": "2026-09-15T23:57:33",
+  "updated_at": "2026-09-15T23:57:44",
+  "turns": [
+    {
+      "turn_index": 1,
+      "started_at": "2026-09-15T23:57:43",
+      "user": "hãy cho tôi biết lộ trình học IT",
+      "status": "provider_error",
+      "assistant_text": "Không thể kết nối agent lúc này. Kiểm tra provider và cấu hình cục bộ rồi thử lại.",
+      "rounds": [],
+      "tool_events": [],
+      "error": "RuntimeError",
+      "ended_at": "2026-09-15T23:57:44"
+    }
+  ]
+}
