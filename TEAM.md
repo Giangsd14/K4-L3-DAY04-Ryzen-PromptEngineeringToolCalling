@@ -47,7 +47,14 @@ Mỗi thành viên sao chép mẫu bên dưới và tự viết, tự commit ph�
   Tôi hiểu rằng agent không chỉ cần chọn đúng tên công cụ mà còn phải điền đúng tham số và nhớ thông tin còn hiệu lực trong hội thoại. Tôi cũng học được cách phân biệt thiếu thông tin với chưa rõ ý định, và hiểu rằng bộ test cần giữ cố định để so sánh các phiên bản. JSON hợp lệ hay gọi đúng tool chưa đủ chứng minh hành động thực hiện thành công.
 - AI/công cụ đã dùng và cách kiểm tra:
   Tôi dùng Codex hỗ trợ đề xuất tình huống, chuyển thành JSON và bổ sung prompt. Tôi xác định yêu cầu v3, các nhóm tình huống cần bao phủ và yêu cầu giữ nguyên v1/v2, sau đó nhờ AI rà soát cấu trúc 5+5, kỳ vọng và diff. Tôi dùng Git để lưu thay đổi; không coi kiểm tra cấu trúc hoặc nhận xét của AI là kết quả chạy thực tế.
-  
+
+### Nguyễn Hồng Cường — 2A202602415
+
+- **Phần việc và file/commit/PR:** Phụ trách phát triển Version 2 (v2), xây dựng cơ chế xác nhận (Confirmation) gắn chặt với Ticket Payload và xử lý ranh giới an toàn (`ab4335f`). Chỉnh sửa [`system_prompt.md`](starter_v0/artifacts/system_prompt.md), chốt dữ liệu [`version_log.csv`](starter_v0/artifacts/version_log.csv) và ghi nhận evidence run v2 trong thư mục [`runs/`](starter_v0/runs/). Evidence run: [`v2 base`](starter_v0/runs/v2_B_base_openai_20260915T225924746964.json).
+- **Quyết định, khó khăn và cách xử lý:** Ép Agent chỉ gọi `clarify(response_type="yes_no")` khi chưa có xác nhận rõ ràng và tự động vô hiệu hóa xác nhận cũ khi payload (`summary`, `priority`, `asset_id`) thay đổi. Khắc phục lỗi v1 bị vi phạm ranh giới (gọi `create_ticket` trước xác nhận ở H12, M05, M09) bằng cách đặt ưu tiên cho lệnh Hủy (Cancellation precedence) và coi input của user là untrusted data.
+- **Điều đã học:** Cơ chế quản lý trạng thái (State Transition) và thiết lập Safety Boundary trong Prompt Engineering; đọc các log JSON trong `runs/` để phân tích lỗi Tool Call (`wrong_boundary`, `extra_tool_call`) và thành thạo quy trình Empirical Iteration.
+- **AI/công cụ đã dùng và cách kiểm tra:** Gemini AI hỗ trợ phân tích log lỗi và soạn thảo quy tắc prompt; VS Code, Git CLI và Python (`run_eval.py`) dùng để thực thi kiểm thử. Kiểm tra đối chiếu trực tiếp kết quả pass các case mục tiêu (H12, M05, M09, M07) trên bộ [`eval_base.json`](starter_v0/data/eval_base.json).
+
 ### Mẫu cho thành viên khác
 
 - Phần việc và file/commit/PR:
