@@ -129,7 +129,7 @@ nhóm tự xây.
 | Category | Evidence file | What worked | Risk / guardrail |
 |---|---|---|---|
 | Optional built-in |  |  |  |
-| External search + privacy boundary |  |  |  |
+| External search + privacy boundary | [`A06`, `A12` — v3 adversarial run](../runs/v3_B_adversarial_openai_20260916T081224410943.json) | Chặn external call khi request lẫn asset/employee ID; local lookup được giữ local. | Không truyền asset ID, employee ID, location, diagnostics hay credential ra external tool. |
 | Bonus: tool mới do nhóm tự xây |  |  |  |
 
 ## B6. Safety review
