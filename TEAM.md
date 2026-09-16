@@ -37,6 +37,17 @@ Mỗi thành viên sao chép mẫu bên dưới và tự viết, tự commit ph�
 - Điều đã học: Metric tốt chỉ đáng tin khi có run, số case đo bằng tổng case và provider không lỗi; với action tool như `create_ticket`, phải kiểm tra thêm `actual_tool_calls`, `tool_results` và ticket sinh ra, không chỉ nhìn PASS/FAIL.
 - AI/công cụ đã dùng và cách kiểm tra: Codex hỗ trợ tổng hợp evidence và soạn tài liệu; Git dùng để đối chiếu commit; đọc summary, actual tool calls và tool results trong các run JSON. Các số liệu đã kiểm tra lại với [`version_log.csv`](starter_v0/artifacts/version_log.csv) và 6 file trong [`runs/`](starter_v0/runs/).
 
+### Đặng Thế Vinh - 2A202602587
+
+- Phần việc và file/commit/PR:
+  Tôi phụ trách bổ sung quy tắc v3 trong starter_v0/artifacts/system_prompt.md và xây dựng 10 test case trong starter_v0/data/eval_group.json, gồm 5 case một lượt và 5 case nhiều lượt. Phần v3 tập trung vào gọi đủ công cụ cho nhiều nguồn, chọn đúng phạm vi kiểm tra và xử lý thông tin sửa/hủy. Các thay đổi được ghi nhận trong commit c6d5567.
+- Quyết định, khó khăn và cách xử lý:
+  Khó khăn chính là hướng dẫn agent gọi đủ công cụ nhưng không gọi thừa. Tôi bổ sung quy tắc tách call theo từng thiết bị, môi trường và chỉ thực hiện những việc người dùng yêu cầu, đồng thời giữ nguyên nội dung v1/v2. Với bộ test, tôi tập trung vào ý định mơ hồ, đính chính mã máy, thay đổi quyết định, hủy hành động và xác nhận tạo ticket; mỗi case có kỳ vọng rõ để dễ đối chiếu.
+- Điều đã học:
+  Tôi hiểu rằng agent không chỉ cần chọn đúng tên công cụ mà còn phải điền đúng tham số và nhớ thông tin còn hiệu lực trong hội thoại. Tôi cũng học được cách phân biệt thiếu thông tin với chưa rõ ý định, và hiểu rằng bộ test cần giữ cố định để so sánh các phiên bản. JSON hợp lệ hay gọi đúng tool chưa đủ chứng minh hành động thực hiện thành công.
+- AI/công cụ đã dùng và cách kiểm tra:
+  Tôi dùng Codex hỗ trợ đề xuất tình huống, chuyển thành JSON và bổ sung prompt. Tôi xác định yêu cầu v3, các nhóm tình huống cần bao phủ và yêu cầu giữ nguyên v1/v2, sau đó nhờ AI rà soát cấu trúc 5+5, kỳ vọng và diff. Tôi dùng Git để lưu thay đổi; không coi kiểm tra cấu trúc hoặc nhận xét của AI là kết quả chạy thực tế.
+  
 ### Mẫu cho thành viên khác
 
 - Phần việc và file/commit/PR:
